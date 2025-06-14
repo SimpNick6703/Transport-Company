@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - New Rental{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Create New Rental</h1>
+        <p class="text-muted">Register a new vehicle rental</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('rental.list_rentals') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Rental Information</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('rental.create_rental') }}" method="post" id="rental-form">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="customer_id" class="form-label">Customer <span class="text-danger">*</span></label>
+                            <select class="form-select" id="customer_id" name="customer_id" required>
+                                <option value="">Select customer</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}" {% if selected_customer_id == customer.id %}selected{% endif %}>
+                                    {{ customer.first_name }} {{ customer.last_name }} ({{ customer.email }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vehicle_id" class="form-label">Vehicle <span class="text-danger">*</span></label>
+                            <select class="form-select" id="vehicle_id" name="vehicle_id" required>
+                                <option value="">Select vehicle</option>
+                                {% for vehicle in available_vehicles %}
+                                <option value="{{ vehicle.id }}" {% if selected_vehicle_id == vehicle.id %}selected{% endif %}
+                                    data-daily-rate="{{ vehicle.daily_rate }}">
+                                    {{ vehicle.registration_number }} - {{ vehicle.model }} ({{ vehicle.vehicle_type }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">Start Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                value="{{ today.strftime('%Y-%m-%d') }}" min="{{ today.strftime('%Y-%m-%d') }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">End Date <span class="text-danger">*</span></label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                value="{{ (today + timedelta(days=1)).strftime('%Y-%m-%d') }}" 
+                                min="{{ (today + timedelta(days=1)).strftime('%Y-%m-%d') }}" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="daily_rate" class="form-label">Daily Rate ($) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="daily_rate" name="daily_rate" step="0.01" min="0" required>
+                            <div class="form-text text-muted">This will be auto-filled based on vehicle selection</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="rental_status" class="form-label">Initial Status</label>
+                            <select class="form-select" id="rental_status" name="rental_status">
+                                <option value="booked">Booked</option>
+                                <option value="active">Active (Start immediately)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="alert alert-info mb-0">
+                                <div class="d-flex align-items-center">
+                                    <div>
+                                        <div id="rental-days">0</div>
+                                        <div>Total days</div>
+                                    </div>
+                                    <div class="ms-auto">
+                                        <div>$<span id="rental-total">0.00</span></div>
+                                        <div>Estimated total</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <button type="reset" class="btn btn-secondary">Reset</button>
+                            <button type="submit" class="btn btn-primary">Create Rental</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Vehicle Information</h5>
+            </div>
+            <div class="card-body" id="vehicle-info">
+                <div class="text-center text-muted py-5">
+                    Select a vehicle to view details
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Customer Information</h5>
+            </div>
+            <div class="card-body" id="customer-info">
+                <div class="text-center text-muted py-5">
+                    Select a customer to view details
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/rental.js') }}"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const vehicleSelect = document.getElementById('vehicle_id');
+    const customerSelect = document.getElementById('customer_id');
+    const dailyRateInput = document.getElementById('daily_rate');
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    const rentalDaysEl = document.getElementById('rental-days');
+    const rentalTotalEl = document.getElementById('rental-total');
+    const vehicleInfoEl = document.getElementById('vehicle-info');
+    const customerInfoEl = document.getElementById('customer-info');
+    
+    // Update daily rate when vehicle selected
+    if (vehicleSelect) {
+        vehicleSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                const dailyRate = selectedOption.getAttribute('data-daily-rate');
+                dailyRateInput.value = dailyRate;
+                
+                // Get vehicle details via AJAX
+                fetch(`/api/vehicles/${selectedOption.value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        vehicleInfoEl.innerHTML = `
+                            <h5>${data.model} (${data.year})</h5>
+                            <p><strong>Registration:</strong> ${data.registration_number}<br>
+                            <strong>Type:</strong> ${data.vehicle_type}<br>
+                            <strong>Capacity:</strong> ${data.capacity} ${data.vehicle_type === 'car' || data.vehicle_type === 'bus' ? 'passengers' : 'tons'}<br>
+                            <strong>Daily Rate:</strong> $${data.daily_rate}</p>
+                        `;
+                    })
+                    .catch(error => {
+                        console.error('Error fetching vehicle details:', error);
+                    });
+            } else {
+                dailyRateInput.value = '';
+                vehicleInfoEl.innerHTML = '<div class="text-center text-muted py-5">Select a vehicle to view details</div>';
+            }
+            updateTotals();
+        });
+    }
+    
+    // Get customer details when selected
+    if (customerSelect) {
+        customerSelect.addEventListener('change', function() {
+            const selectedOption = this.options[this.selectedIndex];
+            if (selectedOption && selectedOption.value) {
+                // Get customer details via AJAX
+                fetch(`/api/customers/${selectedOption.value}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        customerInfoEl.innerHTML = `
+                            <h5>${data.first_name} ${data.last_name}</h5>
+                            <p><strong>Email:</strong> ${data.email}<br>
+                            <strong>Phone:</strong> ${data.phone}<br>
+                            <strong>License:</strong> ${data.driving_license_number}<br>
+                            <strong>License Expiry:</strong> ${new Date(data.license_expiry_date).toLocaleDateString()}</p>
+                        `;
+                        
+                        // Check if license is expired
+                        const licenseExpiry = new Date(data.license_expiry_date);
+                        const today = new Date();
+                        if (licenseExpiry < today) {
+                            customerInfoEl.innerHTML += `
+                                <div class="alert alert-danger">
+                                    <i class="fas fa-exclamation-circle"></i> 
+                                    Warning: Customer's license is expired!
+                                </div>
+                            `;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching customer details:', error);
+                    });
+            } else {
+                customerInfoEl.innerHTML = '<div class="text-center text-muted py-5">Select a customer to view details</div>';
+            }
+        });
+    }
+    
+    // Update totals when dates change
+    if (startDateInput && endDateInput) {
+        [startDateInput, endDateInput, dailyRateInput].forEach(input => {
+            input.addEventListener('change', updateTotals);
+        });
+    }
+    
+    // Calculate rental days and total
+    function updateTotals() {
+        if (startDateInput.value && endDateInput.value) {
+            const start = new Date(startDateInput.value);
+            const end = new Date(endDateInput.value);
+            
+            // Calculate days difference
+            const diffTime = end - start;
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            
+            if (diffDays > 0) {
+                rentalDaysEl.textContent = diffDays;
+                
+                // Calculate total
+                const dailyRate = parseFloat(dailyRateInput.value) || 0;
+                const total = dailyRate * diffDays;
+                rentalTotalEl.textContent = total.toFixed(2);
+            } else {
+                rentalDaysEl.textContent = '0';
+                rentalTotalEl.textContent = '0.00';
+            }
+        }
+    }
+    
+    // Form validation
+    const rentalForm = document.getElementById('rental-form');
+    if (rentalForm) {
+        rentalForm.addEventListener('submit', function(e) {
+            const start = new Date(startDateInput.value);
+            const end = new Date(endDateInput.value);
+            
+            if (end <= start) {
+                e.preventDefault();
+                alert('Error: End date must be after start date.');
+            }
+        });
+    }
+    
+    // Initialize calculations
+    if (vehicleSelect.value) {
+        vehicleSelect.dispatchEvent(new Event('change'));
+    }
+    if (customerSelect.value) {
+        customerSelect.dispatchEvent(new Event('change'));
+    }
+    updateTotals();
+});
+</script>
+{% endblock %}

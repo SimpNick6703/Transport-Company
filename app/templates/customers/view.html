@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Customer Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ customer.first_name }} {{ customer.last_name }}</h1>
+        <p class="text-muted">Customer #{{ customer.id }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('customer.update_customer', id=customer.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit Customer
+        </a>
+        <a href="{{ url_for('customer.list_customers') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Customer Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">First Name:</div>
+                    <div class="col-md-8">{{ customer.first_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Last Name:</div>
+                    <div class="col-md-8">{{ customer.last_name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Email:</div>
+                    <div class="col-md-8">{{ customer.email }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Phone:</div>
+                    <div class="col-md-8">{{ customer.phone }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Address:</div>
+                    <div class="col-md-8">{{ customer.address or 'Not provided' }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Driving License:</div>
+                    <div class="col-md-8">{{ customer.driving_license_number }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">License Expiry:</div>
+                    <div class="col-md-8">{{ customer.license_expiry_date.strftime('%Y-%m-%d') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Customer Type:</div>
+                    <div class="col-md-8">
+                        <span class="badge {% if customer.customer_type == 'individual' %}bg-info{% else %}bg-primary{% endif %}">
+                            {{ customer.customer_type }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('rental.create_rental') }}?customer_id={{ customer.id }}" class="btn btn-success">Create New Rental</a>
+                    <a href="{{ url_for('customer.update_customer', id=customer.id) }}" class="btn btn-primary">Edit Information</a>
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCustomerModal">Delete Customer</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Rental History</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for rental in customer.rentals.order_by('start_date desc').limit(5).all() %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ rental.vehicle.registration_number }} - {{ rental.vehicle.model }}</span>
+                                <br>
+                                <small>{{ rental.start_date.strftime('%Y-%m-%d') }} to {{ rental.end_date.strftime('%Y-%m-%d') }}</small>
+                            </div>
+                            <span class="badge {% if rental.rental_status == 'active' %}bg-success{% elif rental.rental_status == 'completed' %}bg-primary{% elif rental.rental_status == 'canceled' %}bg-danger{% else %}bg-warning text-dark{% endif %}">
+                                {{ rental.rental_status }}
+                            </span>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">No rental history available</li>
+                    {% endfor %}
+                </ul>
+                {% if customer.rentals.count() > 5 %}
+                <div class="mt-2 text-end">
+                    <a href="#" class="btn btn-sm btn-link">View all {{ customer.rentals.count() }} rentals</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteCustomerModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete {{ customer.first_name }} {{ customer.last_name }}? This action cannot be undone.
+                {% if customer.rentals.count() > 0 %}
+                <div class="alert alert-warning mt-3">
+                    <strong>Warning:</strong> This customer has {{ customer.rentals.count() }} rental records. Deleting this customer may affect historical data.
+                </div>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('customer.delete_customer', id=customer.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete Customer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

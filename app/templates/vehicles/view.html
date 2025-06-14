@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - {{ vehicle.registration_number }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>{{ vehicle.registration_number }}</h1>
+        <p class="text-muted">{{ vehicle.model }} ({{ vehicle.year }})</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('vehicle.update_vehicle', id=vehicle.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit Vehicle
+        </a>
+        <a href="{{ url_for('vehicle.list_vehicles') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Vehicle Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Registration Number:</div>
+                    <div class="col-md-8">{{ vehicle.registration_number }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Type:</div>
+                    <div class="col-md-8">{{ vehicle.vehicle_type }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Model:</div>
+                    <div class="col-md-8">{{ vehicle.model }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Year:</div>
+                    <div class="col-md-8">{{ vehicle.year }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Capacity:</div>
+                    <div class="col-md-8">
+                        {% if vehicle.vehicle_type == 'car' %}
+                        {{ vehicle.capacity }} passengers
+                        {% elif vehicle.vehicle_type == 'truck' %}
+                        {{ vehicle.capacity }} tons
+                        {% elif vehicle.vehicle_type == 'bus' %}
+                        {{ vehicle.capacity }} passengers
+                        {% else %}
+                        {{ vehicle.capacity }}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Daily Rate:</div>
+                    <div class="col-md-8">${{ vehicle.daily_rate }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Status:</div>
+                    <div class="col-md-8">
+                        {% if vehicle.status == 'available' %}
+                        <span class="badge bg-success">Available</span>
+                        {% elif vehicle.status == 'rented' %}
+                        <span class="badge bg-danger">Rented</span>
+                        {% elif vehicle.status == 'maintenance' %}
+                        <span class="badge bg-warning text-dark">Maintenance</span>
+                        {% else %}
+                        <span class="badge bg-secondary">{{ vehicle.status }}</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Current Location:</div>
+                    <div class="col-md-8">{{ vehicle.location or 'N/A' }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Mileage:</div>
+                    <div class="col-md-8">{{ vehicle.mileage }} km</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Last Maintenance Date:</div>
+                    <div class="col-md-8">
+                        {% if vehicle.last_maintenance_date %}
+                        {{ vehicle.last_maintenance_date.strftime('%Y-%m-%d') }}
+                        {% else %}
+                        No record
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if vehicle.status == 'available' %}
+                    <a href="{{ url_for('rental.create_rental') }}?vehicle_id={{ vehicle.id }}" class="btn btn-success">Create Rental</a>
+                    <a href="#" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#maintenanceModal">Schedule Maintenance</a>
+                    {% elif vehicle.status == 'rented' %}
+                    <button class="btn btn-info" disabled>Currently Rented</button>
+                    {% elif vehicle.status == 'maintenance' %}
+                    <button class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#completeMaintenanceModal">Complete Maintenance</button>
+                    {% endif %}
+                    
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteVehicleModal">Delete Vehicle</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Rental History</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for rental in vehicle.rentals.order_by(Rental.start_date.desc()).limit(5).all() %}
+                    <li class="list-group-item">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <span class="fw-bold">{{ rental.start_date.strftime('%Y-%m-%d') }}</span> to 
+                                <span class="fw-bold">{{ rental.end_date.strftime('%Y-%m-%d') }}</span>
+                                <br>
+                                <small>{{ rental.customer.first_name }} {{ rental.customer.last_name }}</small>
+                            </div>
+                            <span class="badge rounded-pill 
+                            {% if rental.rental_status == 'active' %}
+                            bg-success
+                            {% elif rental.rental_status == 'completed' %}
+                            bg-primary
+                            {% elif rental.rental_status == 'canceled' %}
+                            bg-danger
+                            {% else %}
+                            bg-warning text-dark
+                            {% endif %}
+                            ">{{ rental.rental_status }}</span>
+                        </div>
+                    </li>
+                    {% else %}
+                    <li class="list-group-item">No rental history available</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteVehicleModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Deletion</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete {{ vehicle.registration_number }} ({{ vehicle.model }})? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('vehicle.delete_vehicle', id=vehicle.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete Vehicle</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1>Dashboard</h1>
+        <p class="text-muted">System overview and analytics</p>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3 mb-3">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body py-5">
+                <h5 class="card-title">Total Revenue</h5>
+                <h2 class="display-4">${{ total_revenue }}</h2>
+                <p>From all completed rentals</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-success text-white h-100">
+            <div class="card-body py-5">
+                <h5 class="card-title">Fleet Utilization</h5>
+                <h2 class="display-4">{{ utilization_rate }}%</h2>
+                <p>Of vehicles currently rented</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-warning text-dark h-100">
+            <div class="card-body py-5">
+                <h5 class="card-title">Upcoming Returns</h5>
+                <h2 class="display-4">{{ upcoming_returns }}</h2>
+                <p>Vehicles due in the next 48 hours</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card bg-info text-white h-100">
+            <div class="card-body py-5">
+                <h5 class="card-title">Maintenance Required</h5>
+                <h2 class="display-4">{{ maintenance_count }}</h2>
+                <p>Vehicles needing service</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-bar me-1"></i>
+                Monthly Revenue
+            </div>
+            <div class="card-body">
+                <canvas id="revenueChart" width="100%" height="40"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-pie me-1"></i>
+                Vehicle Type Distribution
+            </div>
+            <div class="card-body">
+                <canvas id="vehicleTypeChart" width="100%" height="40"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activity and Upcoming Returns -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-history me-1"></i>
+                Recent Rental Activity
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Vehicle</th>
+                            <th>Customer</th>
+                            <th>Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rental in recent_rentals %}
+                        <tr>
+                            <td>{{ rental.id }}</td>
+                            <td>{{ rental.vehicle.registration_number }}</td>
+                            <td>{{ rental.customer.first_name }} {{ rental.customer.last_name }}</td>
+                            <td>
+                                {% if rental.rental_status == 'active' %}
+                                <span class="badge bg-success">Active</span>
+                                {% elif rental.rental_status == 'completed' %}
+                                <span class="badge bg-primary">Completed</span>
+                                {% elif rental.rental_status == 'canceled' %}
+                                <span class="badge bg-danger">Cancelled</span>
+                                {% else %}
+                                <span class="badge bg-warning text-dark">Booked</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ rental.start_date.strftime('%Y-%m-%d') }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-calendar me-1"></i>
+                Upcoming Vehicle Returns
+            </div>
+            <div class="card-body">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Vehicle</th>
+                            <th>Customer</th>
+                            <th>Due Date</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for rental in upcoming_rental_returns %}
+                        <tr>
+                            <td>{{ rental.vehicle.registration_number }} - {{ rental.vehicle.model }}</td>
+                            <td>{{ rental.customer.first_name }} {{ rental.customer.last_name }}</td>
+                            <td>{{ rental.end_date.strftime('%Y-%m-%d %H:%M') }}</td>
+                            <td>
+                                <a href="{{ url_for('rental.update_rental', id=rental.id) }}" class="btn btn-sm btn-primary">Process Return</a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.0/dist/chart.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Revenue Chart
+    var revenueCtx = document.getElementById('revenueChart').getContext('2d');
+    var revenueChart = new Chart(revenueCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ months|safe }},
+            datasets: [{
+                label: 'Monthly Revenue',
+                data: {{ monthly_revenue }},
+                backgroundColor: 'rgba(13, 110, 253, 0.5)',
+                borderColor: 'rgb(13, 110, 253)',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Revenue ($)'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            }
+        }
+    });
+
+    // Vehicle Type Chart
+    var vehicleTypeCtx = document.getElementById('vehicleTypeChart').getContext('2d');
+    var vehicleTypeChart = new Chart(vehicleTypeCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ vehicle_types|safe }},
+            datasets: [{
+                data: {{ vehicle_type_counts }},
+                backgroundColor: [
+                    'rgba(13, 110, 253, 0.7)',
+                    'rgba(25, 135, 84, 0.7)',
+                    'rgba(255, 193, 7, 0.7)',
+                    'rgba(220, 53, 69, 0.7)',
+                    'rgba(13, 202, 240, 0.7)'
+                ],
+                borderColor: [
+                    'rgb(13, 110, 253)',
+                    'rgb(25, 135, 84)',
+                    'rgb(255, 193, 7)',
+                    'rgb(220, 53, 69)',
+                    'rgb(13, 202, 240)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

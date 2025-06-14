@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Rental Details{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Rental #{{ rental.id }}</h1>
+        <p class="text-muted">{{ rental.vehicle.registration_number }} - {{ rental.vehicle.model }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        {% if rental.rental_status == 'booked' %}
+        <a href="{{ url_for('rental.update_rental', id=rental.id) }}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edit Rental
+        </a>
+        {% endif %}
+        <a href="{{ url_for('rental.list_rentals') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to List
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Rental Details</h5>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center mb-4">
+                    <div class="col text-center">
+                        <div class="p-3 border rounded">
+                            <h6 class="text-muted mb-1">Rental Status</h6>
+                            <span class="badge fs-5 
+                            {% if rental.rental_status == 'active' %}
+                                {% if rental.end_date < now %}
+                                bg-danger
+                                {% else %}
+                                bg-success
+                                {% endif %}
+                            {% elif rental.rental_status == 'completed' %}
+                            bg-primary
+                            {% elif rental.rental_status == 'canceled' %}
+                            bg-danger
+                            {% else %}
+                            bg-warning text-dark
+                            {% endif %}
+                            ">
+                            {% if rental.rental_status == 'active' and rental.end_date < now %}
+                            Overdue
+                            {% elif rental.rental_status == 'active' %}
+                            Active
+                            {% elif rental.rental_status == 'completed' %}
+                            Completed
+                            {% elif rental.rental_status == 'canceled' %}
+                            Canceled
+                            {% else %}
+                            Booked
+                            {% endif %}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col text-center">
+                        <div class="p-3 border rounded">
+                            <h6 class="text-muted mb-1">Rental Period</h6>
+                            <p class="mb-0">{{ (rental.end_date - rental.start_date).days }} days</p>
+                        </div>
+                    </div>
+                    <div class="col text-center">
+                        <div class="p-3 border rounded">
+                            <h6 class="text-muted mb-1">Total Amount</h6>
+                            <p class="mb-0 fs-5">
+                            {% if rental.total_amount %}
+                            ${{ rental.total_amount }}
+                            {% else %}
+                            <span class="text-muted">Pending</span>
+                            {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Start Date:</div>
+                    <div class="col-md-8">{{ rental.start_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">End Date:</div>
+                    <div class="col-md-8">{{ rental.end_date.strftime('%Y-%m-%d %H:%M') }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Return Date:</div>
+                    <div class="col-md-8">
+                        {% if rental.return_date %}
+                        {{ rental.return_date.strftime('%Y-%m-%d %H:%M') }}
+                        {% else %}
+                        <span class="text-muted">Not returned yet</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Daily Rate:</div>
+                    <div class="col-md-8">${{ rental.daily_rate }}</div>
+                </div>
+                {% if rental.additional_charges %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Additional Charges:</div>
+                    <div class="col-md-8">${{ rental.additional_charges }}
+                        {% if rental.charge_notes %}
+                        <br><small class="text-muted">{{ rental.charge_notes }}</small>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Payment Status:</div>
+                    <div class="col-md-8">
+                        {% if rental.payment_status == 'paid' %}
+                        <span class="badge bg-success">Paid</span>
+                        {% elif rental.payment_status == 'partially_paid' %}
+                        <span class="badge bg-warning text-dark">Partially Paid</span>
+                        {% else %}
+                        <span class="badge bg-danger">Unpaid</span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% if rental.notes %}
+                <div class="row mb-3">
+                    <div class="col-md-4 fw-bold">Notes:</div>
+                    <div class="col-md-8">{{ rental.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Quick Actions</h5>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if rental.rental_status == 'booked' %}
+                    <a href="{{ url_for('rental.start_rental', id=rental.id) }}" class="btn btn-success">Start Rental</a>
+                    <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#cancelRentalModal">Cancel Rental</button>
+                    {% elif rental.rental_status == 'active' %}
+                    <a href="{{ url_for('rental.return_vehicle', id=rental.id) }}" class="btn btn-success">Process Return</a>
+                    <a href="{{ url_for('rental.extend_rental', id=rental.id) }}" class="btn btn-warning">Extend Rental</a>
+                    {% endif %}
+                    <a href="{{ url_for('vehicle.view_vehicle', id=rental.vehicle_id) }}" class="btn btn-info">View Vehicle</a>
+                    <a href="{{ url_for('customer.view_customer', id=rental.customer_id) }}" class="btn btn-primary">View Customer</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Vehicle</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5>{{ rental.vehicle.registration_number }}</h5>
+                        <p>{{ rental.vehicle.vehicle_type | title }} - {{ rental.vehicle.model }} ({{ rental.vehicle.year }})</p>
+                        <a href="{{ url_for('vehicle.view_vehicle', id=rental.vehicle_id) }}" class="btn btn-sm btn-outline-info">Details</a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h6 class="card-title mb-0">Customer</h6>
+                    </div>
+                    <div class="card-body">
+                        <h5>{{ rental.customer.first_name }} {{ rental.customer.last_name }}</h5>
+                        <p>{{ rental.customer.phone }}<br>{{ rental.customer.email }}</p>
+                        <a href="{{ url_for('customer.view_customer', id=rental.customer_id) }}" class="btn btn-sm btn-outline-primary">Details</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+{% if rental.rental_status == 'booked' %}
+<div class="modal fade" id="cancelRentalModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Cancellation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to cancel this rental?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <form action="{{ url_for('rental.cancel_rental', id=rental.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Cancel Rental</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

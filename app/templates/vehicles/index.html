@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Vehicles{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Vehicle Fleet</h1>
+        <p class="text-muted">Manage your company's vehicle fleet</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('vehicle.create_vehicle') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Vehicle
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active vehicle-type-filter" href="#" data-filter="all">All Vehicles</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="car">Cars</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="bus">Buses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="truck">Trucks</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reg. Number</th>
+                                <th>Type</th>
+                                <th>Model</th>
+                                <th>Capacity</th>
+                                <th>Daily Rate</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vehicle in vehicles %}
+                            <tr class="vehicle-row" data-vehicle-type="{{ vehicle.vehicle_type }}">
+                                <td>{{ vehicle.registration_number }}</td>
+                                <td>{{ vehicle.vehicle_type }}</td>
+                                <td>{{ vehicle.model }} ({{ vehicle.year }})</td>
+                                <td>{{ vehicle.capacity }}</td>
+                                <td>${{ vehicle.daily_rate }}</td>
+                                <td>
+                                    {% if vehicle.status == 'available' %}
+                                    <span class="badge bg-success">Available</span>
+                                    {% elif vehicle.status == 'rented' %}
+                                    <span class="badge bg-danger">Rented</span>
+                                    {% elif vehicle.status == 'maintenance' %}
+                                    <span class="badge bg-warning text-dark">Maintenance</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ vehicle.status }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('vehicle.view_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('vehicle.update_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ vehicle.id }}">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not vehicles %}
+                <div class="alert alert-info">
+                    No vehicles found. <a href="{{ url_for('vehicle.create_vehicle') }}">Add your first vehicle</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modals -->
+{% for vehicle in vehicles %}
+<div class="modal fade" id="deleteModal{{ vehicle.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ vehicle.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ vehicle.id }}">Delete Vehicle</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete vehicle <strong>{{ vehicle.registration_number }} - {{ vehicle.model }}</strong>?
+                This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('vehicle.delete_vehicle', id=vehicle.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/vehicle.js') }}"></script>
+{% endblock %}

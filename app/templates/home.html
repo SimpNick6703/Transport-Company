@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Home{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col">
+        <h1 class="display-4">Transport Company Vehicle Rental</h1>
+        <p class="lead">Welcome to our vehicle rental management system. Manage your fleet, customers, and rentals all in one place.</p>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-3">
+        <div class="card text-white bg-primary mb-3">
+            <div class="card-header">Vehicles</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_vehicles }}</h5>
+                <p class="card-text">Total vehicles in fleet</p>
+                <a href="{{ url_for('vehicle.list_vehicles') }}" class="btn btn-light btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-success mb-3">
+            <div class="card-header">Available Vehicles</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ available_vehicles }}</h5>
+                <p class="card-text">Available for rental</p>
+                <a href="{{ url_for('vehicle.available_vehicles') }}" class="btn btn-light btn-sm">View Available</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-info mb-3">
+            <div class="card-header">Customers</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ total_customers }}</h5>
+                <p class="card-text">Registered customers</p>
+                <a href="{{ url_for('customer.list_customers') }}" class="btn btn-light btn-sm">View All</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-white bg-warning mb-3">
+            <div class="card-header">Active Rentals</div>
+            <div class="card-body">
+                <h5 class="card-title">{{ active_rentals }}</h5>
+                <p class="card-text">Currently active</p>
+                <a href="{{ url_for('rental.active_rentals') }}" class="btn btn-light btn-sm">View Active</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('vehicle.create_vehicle') }}" class="btn btn-outline-primary">Add New Vehicle</a>
+                    <a href="{{ url_for('customer.create_customer') }}" class="btn btn-outline-info">Add New Customer</a>
+                    <a href="{{ url_for('rental.create_rental') }}" class="btn btn-outline-success">Create New Rental</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                System Information
+            </div>
+            <div class="card-body">
+                <p>Transport Company Vehicle Rental Management System</p>
+                <p>Version: 1.0</p>
+                <p>Built with Flask, SQLite, HTML, and CSS</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/home.js') }}"></script>
+{% endblock %}

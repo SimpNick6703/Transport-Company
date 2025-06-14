@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Available Vehicles{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Available Vehicles</h1>
+        <p class="text-muted">Vehicles ready for rental</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('rental.create_rental') }}" class="btn btn-success">
+            <i class="fas fa-plus"></i> Create Rental
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active vehicle-type-filter" href="#" data-filter="all">All Types</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="car">Cars</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="bus">Buses</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link vehicle-type-filter" href="#" data-filter="truck">Trucks</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Reg. Number</th>
+                                <th>Type</th>
+                                <th>Model</th>
+                                <th>Capacity</th>
+                                <th>Daily Rate</th>
+                                <th>Location</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for vehicle in vehicles %}
+                            <tr class="vehicle-row" data-vehicle-type="{{ vehicle.vehicle_type }}">
+                                <td>{{ vehicle.registration_number }}</td>
+                                <td>{{ vehicle.vehicle_type }}</td>
+                                <td>{{ vehicle.model }} ({{ vehicle.year }})</td>
+                                <td>{{ vehicle.capacity }}</td>
+                                <td>${{ vehicle.daily_rate }}</td>
+                                <td>{{ vehicle.location or 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ url_for('vehicle.view_vehicle', id=vehicle.id) }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('rental.create_rental') }}?vehicle_id={{ vehicle.id }}" class="btn btn-sm btn-success">Rent</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not vehicles %}
+                <div class="alert alert-info">
+                    No vehicles available for rent at this time.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/vehicle.js') }}"></script>
+{% endblock %}

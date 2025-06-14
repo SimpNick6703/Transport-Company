@@ -1,0 +1,143 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Customers{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Customer Management</h1>
+        <p class="text-muted">Manage your customer database</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('customer.create_customer') }}" class="btn btn-primary">
+            <i class="fas fa-plus"></i> Add New Customer
+        </a>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col">
+        <div class="card">
+            <div class="card-header">
+                <ul class="nav nav-pills">
+                    <li class="nav-item">
+                        <a class="nav-link active customer-filter" href="#" data-filter="all">All Customers</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link customer-filter" href="#" data-filter="individual">Individual</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link customer-filter" href="#" data-filter="corporate">Corporate</a>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>License No.</th>
+                                <th>Type</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for customer in customers %}
+                            <tr class="customer-row" data-customer-type="{{ customer.customer_type }}">
+                                <td>{{ customer.id }}</td>
+                                <td>{{ customer.first_name }} {{ customer.last_name }}</td>
+                                <td>{{ customer.email }}</td>
+                                <td>{{ customer.phone }}</td>
+                                <td>{{ customer.driving_license_number }}</td>
+                                <td>
+                                    <span class="badge {% if customer.customer_type == 'individual' %}bg-info{% else %}bg-primary{% endif %}">
+                                        {{ customer.customer_type }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('customer.view_customer', id=customer.id) }}" class="btn btn-sm btn-info">View</a>
+                                    <a href="{{ url_for('customer.update_customer', id=customer.id) }}" class="btn btn-sm btn-primary">Edit</a>
+                                    <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ customer.id }}">Delete</button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                {% if not customers %}
+                <div class="alert alert-info">
+                    No customers found. <a href="{{ url_for('customer.create_customer') }}">Add your first customer</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modals -->
+{% for customer in customers %}
+<div class="modal fade" id="deleteModal{{ customer.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ customer.id }}" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel{{ customer.id }}">Delete Customer</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                Are you sure you want to delete customer <strong>{{ customer.first_name }} {{ customer.last_name }}</strong>?
+                This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{{ url_for('customer.delete_customer', id=customer.id) }}" method="post">
+                    <button type="submit" class="btn btn-danger">Delete</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle customer type filtering
+    const customerFilters = document.querySelectorAll('.customer-filter');
+    if (customerFilters.length) {
+        customerFilters.forEach(filter => {
+            filter.addEventListener('click', (e) => {
+                e.preventDefault();
+                const filterType = filter.getAttribute('data-filter');
+                
+                const customerRows = document.querySelectorAll('.customer-row');
+                if (filterType === 'all') {
+                    customerRows.forEach(row => {
+                        row.style.display = '';
+                    });
+                } else {
+                    customerRows.forEach(row => {
+                        if (row.getAttribute('data-customer-type') === filterType) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                }
+                
+                // Update active filter
+                document.querySelectorAll('.customer-filter').forEach(f => {
+                    f.classList.remove('active');
+                });
+                filter.classList.add('active');
+            });
+        });
+    }
+});
+</script>
+{% endblock %}

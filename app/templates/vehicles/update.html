@@ -1,0 +1,138 @@
+{% extends "base.html" %}
+
+{% block title %}Transport Company - Update Vehicle{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Update Vehicle</h1>
+        <p class="text-muted">{{ vehicle.registration_number }} - {{ vehicle.model }}</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{{ url_for('vehicle.view_vehicle', id=vehicle.id) }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Details
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Vehicle Information</h5>
+            </div>
+            <div class="card-body">
+                <form action="{{ url_for('vehicle.update_vehicle', id=vehicle.id) }}" method="post" id="vehicle-form">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="registration_number" class="form-label">Registration Number <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="registration_number" name="registration_number" value="{{ vehicle.registration_number }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="vehicle_type" class="form-label">Vehicle Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="vehicle_type" name="vehicle_type" required>
+                                <option value="">Select type</option>
+                                <option value="car" {% if vehicle.vehicle_type == 'car' %}selected{% endif %}>Car</option>
+                                <option value="bus" {% if vehicle.vehicle_type == 'bus' %}selected{% endif %}>Bus</option>
+                                <option value="truck" {% if vehicle.vehicle_type == 'truck' %}selected{% endif %}>Truck</option>
+                                <option value="van" {% if vehicle.vehicle_type == 'van' %}selected{% endif %}>Van</option>
+                                <option value="motorcycle" {% if vehicle.vehicle_type == 'motorcycle' %}selected{% endif %}>Motorcycle</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="model" class="form-label">Model <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="model" name="model" value="{{ vehicle.model }}" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="year" class="form-label">Year <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="year" name="year" value="{{ vehicle.year }}" min="1900" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="capacity" class="form-label">Capacity <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="capacity" name="capacity" value="{{ vehicle.capacity }}" step="0.1" min="0" required>
+                            <small class="form-text text-muted">Passengers for cars/buses, tons for trucks</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="daily_rate" class="form-label">Daily Rate ($) <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="daily_rate" name="daily_rate" value="{{ vehicle.daily_rate }}" step="0.01" min="0" required>
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="status" class="form-label">Status</label>
+                            <select class="form-select" id="status" name="status">
+                                <option value="available" {% if vehicle.status == 'available' %}selected{% endif %}>Available</option>
+                                <option value="rented" {% if vehicle.status == 'rented' %}selected{% endif %}>Rented</option>
+                                <option value="maintenance" {% if vehicle.status == 'maintenance' %}selected{% endif %}>Maintenance</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="location" class="form-label">Current Location</label>
+                            <input type="text" class="form-control" id="location" name="location" value="{{ vehicle.location }}">
+                        </div>
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="mileage" class="form-label">Mileage (km)</label>
+                            <input type="number" class="form-control" id="mileage" name="mileage" value="{{ vehicle.mileage }}" min="0">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="last_maintenance_date" class="form-label">Last Maintenance Date</label>
+                            <input type="date" class="form-control" id="last_maintenance_date" name="last_maintenance_date" 
+                            {% if vehicle.last_maintenance_date %}
+                            value="{{ vehicle.last_maintenance_date.strftime('%Y-%m-%d') }}"
+                            {% endif %}>
+                        </div>
+                    </div>
+
+                    <div class="mb-3 text-end">
+                        <a href="{{ url_for('vehicle.view_vehicle', id=vehicle.id) }}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Update Vehicle</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Update Guidance</h5>
+            </div>
+            <div class="card-body">
+                <p>Fields marked with <span class="text-danger">*</span> are required.</p>
+                
+                <h6 class="mt-3">Important Notes:</h6>
+                <ul>
+                    <li>Changing the status to "maintenance" will make this vehicle unavailable for rental</li>
+                    <li>A vehicle with active rentals should not have its status changed from "rented" manually</li>
+                    <li>Updating the mileage helps maintain accurate service records</li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">Vehicle History</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>Added on:</strong> {{ vehicle.created_at.strftime('%Y-%m-%d') }}</p>
+                <p><strong>Last updated:</strong> {{ vehicle.updated_at.strftime('%Y-%m-%d %H:%M') }}</p>
+                <p><strong>Total rentals:</strong> {{ vehicle.rentals.count() }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/vehicle.js') }}"></script>
+{% endblock %}
